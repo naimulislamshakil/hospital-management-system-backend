@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('../Utils/AsyncHandler');
 const ApiError = require('../Utils/ApiError');
 
-const veryfyToken = asyncHandler(async (req, _, next) => {
+exports.verifyToken = asyncHandler(async (req, _, next) => {
 	try {
 		const token = req.cookies.accessToken || req.body;
 
@@ -13,6 +13,7 @@ const veryfyToken = asyncHandler(async (req, _, next) => {
 		const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY);
 
 		req.user = decoded;
+		next();
 	} catch (error) {
 		throw new ApiError(401, 'Unauthorize Access!!');
 	}
