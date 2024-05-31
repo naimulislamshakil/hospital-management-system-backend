@@ -6,13 +6,15 @@ const jwt = require('jsonwebtoken');
 const userSchema = new schema(
 	{
 		email: String,
+		firstName: String,
+		lastName: String,
 		password: String,
+		refreshToken: String,
 		roll: {
 			type: String,
 			enum: ['Doctor', 'Admin', 'Staff', 'Patient'],
 			default: 'Patient',
 		},
-		refreshToken: String,
 	},
 	{ timestamps: true }
 );

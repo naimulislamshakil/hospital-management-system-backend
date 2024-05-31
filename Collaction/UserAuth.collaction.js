@@ -6,10 +6,12 @@ const bcrypt = require('bcrypt');
 
 exports.CreateUserCollaction = asyncHandler(async (req, res) => {
 	// first chack get all data from frontend
-	const { email, password } = req.body;
+	const { email, password, firstName, lastname } = req.body;
 
 	// check field not empty
-	if ([email, password].some((field) => field?.trim() === '')) {
+	if (
+		[email, password, firstName, lastname].some((field) => field?.trim() === '')
+	) {
 		throw new ApiError(400, 'All field are required');
 	}
 
@@ -22,7 +24,9 @@ exports.CreateUserCollaction = asyncHandler(async (req, res) => {
 
 	const user = await UserModel.create(req.body);
 
-	const createdUser = await UserModel.findById({ _id: user._id });
+	const createdUser = await UserModel.findById({ _id: user._id }).select(
+		'-password -refreshToken'
+	);
 
 	if (!createdUser) {
 		throw new ApiError(500, 'Something went wrong !!!');
@@ -32,6 +36,22 @@ exports.CreateUserCollaction = asyncHandler(async (req, res) => {
 		.status(201)
 		.json(new ApiResponse(200, createdUser, 'User registered Successfully'));
 });
+
+const generateAccessandRefreshToken = async (userId) => {
+	try {
+		const user = await UserModel.findById(userId);
+
+		const accessToken = user.generateAccessToken();
+		const refreshToken = user.generateRefreshToken();
+
+		user.refreshToken = refreshToken;
+		user.save({ validateBeforeSave: false });
+
+		return { accessToken, refreshToken };
+	} catch (error) {
+		throw new ApiError(500, 'Something went wrong!!!');
+	}
+};
 
 exports.loginCollaction = asyncHandler(async (req, res) => {
 	// check realy get data from backend
@@ -60,6 +80,32 @@ exports.loginCollaction = asyncHandler(async (req, res) => {
 		throw new ApiError(401, 'The provided email or password is incorrect');
 	}
 
+	const { accessToken, refreshToken } = await generateAccessandRefreshToken(
+		user._id
+	);
 
-	
+	const loggedInUser = await UserModel.findById(user._id).select(
+		'-password -refreshToken'
+	);
+
+	const options = {
+		httpOnly: true,
+		secure: true,
+	};
+
+	return res
+		.status(200)
+		.cookie('accessToken', accessToken, options)
+		.cookie('refreshToken', refreshToken, options)
+		.json(
+			new ApiResponse(
+				200,
+				{
+					user: loggedInUser,
+					accessToken,
+					refreshToken,
+				},
+				'User logged In Successfully'
+			)
+		);
 });
