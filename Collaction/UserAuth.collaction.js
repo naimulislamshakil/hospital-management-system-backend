@@ -3,6 +3,7 @@ const ApiError = require('../Utils/ApiError');
 const ApiResponse = require('../Utils/ApiResponce');
 const asyncHandler = require('../Utils/AsyncHandler');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 exports.CreateUserCollaction = asyncHandler(async (req, res) => {
 	// first chack get all data from frontend
@@ -108,4 +109,51 @@ exports.loginCollaction = asyncHandler(async (req, res) => {
 				'User logged In Successfully'
 			)
 		);
+});
+
+exports.refreshAccessToken = asyncHandler(async (req, res) => {
+	const incommingRefreshToken = req.cookies.refreshToken;
+
+	if (!incommingRefreshToken) {
+		throw new ApiError(401, 'Unauthorized Access!!');
+	}
+
+	try {
+		const decoded = jwt.verify(
+			incommingRefreshToken,
+			process.env.REFRESH_TOKENSECRET_KEY
+		);
+
+		const user = await UserModel.findById(decoded?.id);
+
+		if (!user) {
+			throw new ApiError(401, 'Invalid Access!!');
+		}
+
+		if (incommingRefreshToken !== user.refreshToken) {
+			throw new ApiError(401, 'Unauthorized Access!!');
+		}
+
+		const option = {
+			httpOnly: true,
+			secure: true,
+		};
+
+		const { accessToken, refreshToken: newRefreshToken } =
+			await generateAccessandRefreshToken(decoded.id);
+
+		return res
+			.status(200)
+			.cookie('accessToken', accessToken, option)
+			.cookie('refreshToken', newRefreshToken, option)
+			.json(
+				new ApiResponse(
+					200,
+					{ accessToken, refreshToken: newRefreshToken },
+					'Valid User!!'
+				)
+			);
+	} catch (error) {
+		throw new ApiError(401, 'Invalid Access!!');
+	}
 });
