@@ -11,15 +11,16 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(
 	cors({
-		origin: ['http://localhost:3000', 'https://sass-product.vercel.app'],
+		origin: ['http://localhost:3000'],
 		credentials: true,
 	})
 );
-app.use(express.urlencoded({ extended: false }));
+// app.use(express.urlencoded({ extended: false }));
 app.use(cookiePerser());
 
 // import route
 const userRoute = require('./Router/v1/UserAuth.route');
+const patientRoute = require('./Router/v1/patient.route');
 const errorHandler = require('./Utils/errorHandler');
 
 mongoose
@@ -32,6 +33,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/v1/user', userRoute);
+app.use('/api/v1/patient', patientRoute);
 
 app.use('*', (req, res, next) => {
 	const { baseUrl } = req;
@@ -40,8 +42,7 @@ app.use('*', (req, res, next) => {
 	next(`${baseUrl} Not Found!`);
 });
 
-
-app.use(errorHandler)
+app.use(errorHandler);
 
 app.listen(port, () => {
 	console.log(`Server is running port: ${port}`);

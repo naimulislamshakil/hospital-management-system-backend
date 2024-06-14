@@ -2,9 +2,9 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('../Utils/AsyncHandler');
 const ApiError = require('../Utils/ApiError');
 
-exports.verifyToken = asyncHandler(async (req, _, next) => {
+exports.verifyToken = asyncHandler(async (req, res, next) => {
 	try {
-		const token = req.cookies.accessToken || req.body;
+		const token = req.cookies?.accessToken;
 
 		if (!token) {
 			throw new ApiError(401, 'Unauthorize Access!!');
@@ -15,6 +15,9 @@ exports.verifyToken = asyncHandler(async (req, _, next) => {
 		req.user = decoded;
 		next();
 	} catch (error) {
-		throw new ApiError(401, 'Unauthorize Access!!');
+		throw new ApiError(
+			401,
+			error?.message || 'Unauthorize Access form error!!'
+		);
 	}
 });

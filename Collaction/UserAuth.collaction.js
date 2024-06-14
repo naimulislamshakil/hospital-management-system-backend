@@ -178,3 +178,13 @@ exports.logout = asyncHandler(async (req, res) => {
 		.clearCookie('refreshToken', option)
 		.json(new ApiResponse(200, {}, 'User logged Out'));
 });
+
+exports.getCurrentUser = asyncHandler(async (req, res) => {
+	const { id } = req.user;
+
+	const user = await UserModel.findById(id).select('-password -refreshToken');
+
+	return res
+		.status(200)
+		.json(new ApiResponse(200, { user }, 'User fetched successfully'));
+});
